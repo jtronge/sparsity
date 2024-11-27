@@ -103,7 +103,7 @@ impl CSF {
         let mut fids = vec![];
         let values = tensor.iter().map(|(_, value)| *value).collect();
 
-        // Build the tree from the bottom up
+        // Build the trie from the top down
         let count = tensor[0].0.len();
         for i in 0..count-1 {
             let mut last: Vec<i64> = tensor[0].0[..i+2].iter().map(|x| *x).collect();
