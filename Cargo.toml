@@ -1,4 +1,4 @@
 [package]
-name = "sparse-tensor"
+name = "sparsity"
 version = "0.0.1"
 edition = "2021"
