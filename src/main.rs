@@ -38,6 +38,11 @@ fn load_tensor<P: AsRef<Path>>(path: P) -> Vec<(Vec<i64>, f64)> {
     loop {
         match reader.read_line(&mut line) {
             Ok(n) if n > 0 => {
+                // Skip comments
+                if line.starts_with("#") {
+                    continue;
+                }
+
                 let split: Vec<_> = line
                     .split_whitespace()
                     .map(|s| s.to_string())
