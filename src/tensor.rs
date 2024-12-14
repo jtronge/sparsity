@@ -1,33 +1,10 @@
+//! Sparse tensor data structures.
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::fs::File;
 use std::str::FromStr;
 use std::cmp::Ordering;
 use std::path::Path;
-
-fn main() {
-    // let tensor = load_tensor("lbnl-network.tns");
-    // let tensor = load_tensor("test.tns");
-    // println!("{:?}", tensor);
-    //let csf = CSF::new(tensor);
-    // Test example from http://shaden.io/pub-files/smith2017knl.pdf
-
-    let tensor = vec![
-        (vec![1, 1, 1, 2], 1.0),
-        (vec![1, 1, 1, 3], 2.0),
-        (vec![1, 2, 1, 1], 3.0),
-        (vec![1, 2, 1, 3], 4.0),
-        (vec![1, 2, 2, 1], 5.0),
-        (vec![2, 2, 2, 1], 6.0),
-        (vec![2, 2, 2, 2], 7.0),
-        (vec![2, 2, 2, 3], 8.0),
-    ];
-    let csf = CSF::new(tensor);
-
-    assert_eq!(csf.fptr, vec![vec![0, 2, 3], vec![0, 1, 3, 4], vec![0, 2, 4, 5, 8]]);
-    assert_eq!(csf.fids, vec![vec![1, 2], vec![1, 2, 2], vec![1, 1, 2, 2], vec![2, 3, 1, 3, 1, 1, 2, 3]]);
-    assert_eq!(csf.values, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]);
-}
 
 fn load_tensor<P: AsRef<Path>>(path: P) -> Vec<(Vec<i64>, f64)> {
     let file = File::open(path).expect("missing tensor file");
@@ -136,5 +113,35 @@ impl CSF {
             fids,
             values,
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn basic_tensor() {
+        // let tensor = load_tensor("lbnl-network.tns");
+        // let tensor = load_tensor("test.tns");
+        // println!("{:?}", tensor);
+        //let csf = CSF::new(tensor);
+        // Test example from http://shaden.io/pub-files/smith2017knl.pdf
+
+        let tensor = vec![
+            (vec![1, 1, 1, 2], 1.0),
+            (vec![1, 1, 1, 3], 2.0),
+            (vec![1, 2, 1, 1], 3.0),
+            (vec![1, 2, 1, 3], 4.0),
+            (vec![1, 2, 2, 1], 5.0),
+            (vec![2, 2, 2, 1], 6.0),
+            (vec![2, 2, 2, 2], 7.0),
+            (vec![2, 2, 2, 3], 8.0),
+        ];
+        let csf = CSF::new(tensor);
+
+        assert_eq!(csf.fptr, vec![vec![0, 2, 3], vec![0, 1, 3, 4], vec![0, 2, 4, 5, 8]]);
+        assert_eq!(csf.fids, vec![vec![1, 2], vec![1, 2, 2], vec![1, 1, 2, 2], vec![2, 3, 1, 3, 1, 1, 2, 3]]);
+        assert_eq!(csf.values, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]);
     }
 }
