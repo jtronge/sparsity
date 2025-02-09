@@ -5,35 +5,66 @@ use std::fs::File;
 use std::str::FromStr;
 use std::cmp::Ordering;
 use std::path::Path;
+use std::collections::HashSet;
 
-fn load_tensor<P: AsRef<Path>>(path: P) -> Vec<(Vec<i64>, f64)> {
-    let file = File::open(path).expect("missing tensor file");
+#[derive(Debug)]
+pub enum TensorError {
+    IOError(std::io::Error),
+    BadTensorEntry,
+    BadTensorCoord,
+    InvalidValue,
+}
+
+/// Load and validate a tensor from a file.
+pub fn load_tensor<P: AsRef<Path>>(path: P) -> Result<Vec<(Vec<usize>, f64)>, TensorError> {
+    let file = File::open(path).map_err(|err| TensorError::IOError(err))?;
     let mut reader = BufReader::new(file);
+    let mut co_data = HashSet::new();
+    let mut tensor_data: Vec<(Vec<usize>, f64)> = vec![];
     let mut line = String::new();
-    let mut tensor_data: Vec<(Vec<i64>, f64)> = vec![];
-
-    loop {
-        match reader.read_line(&mut line) {
-            Ok(n) if n > 0 => {
-                // Skip comments
-                if line.starts_with("#") {
-                    continue;
-                }
-
-                let split: Vec<_> = line
-                    .split_whitespace()
-                    .map(|s| s.to_string())
-                    .collect();
-                let co: Vec<_> = split[..split.len()-1]
-                    .iter()
-                    .map(|s| i64::from_str_radix(s, 10).expect("invalid integer value"))
-                    .collect();
-                let value = f64::from_str(&split[split.len()-1]).expect("invalid floating point value");
-                tensor_data.push((co, value));
-            }
-            _ => break,
+    let mut dim_count = None;
+    let mut lno = 1;
+    while reader.read_line(&mut line).map_err(|err| TensorError::IOError(err))? != 0 {
+        let trimmed_line = line.trim();
+        // Check if this is a comment line
+        if trimmed_line.starts_with('#') || trimmed_line.len() == 0 {
+            continue;
         }
+        let parts: Vec<String> = trimmed_line
+            .split_whitespace()
+            .map(|s| s.to_string())
+            .collect();
+        if dim_count.is_none() {
+            let _ = dim_count.insert(parts.len()-1);
+        } else {
+            let count = dim_count.expect("missing dimension count");
+            if count != parts.len()-1 {
+                return Err(TensorError::BadTensorEntry);
+            }
+        }
+
+        let mut co = vec![];
+        for idx in &parts[..parts.len()-1] {
+            match usize::from_str_radix(idx, 10) {
+                Ok(num) => co.push(num),
+                Err(_) => return Err(TensorError::BadTensorCoord),
+            }
+        }
+
+        let value = match f64::from_str(&parts[parts.len()-1]) {
+            Ok(num) => num,
+            Err(_) => return Err(TensorError::InvalidValue),
+        };
+
+        if co_data.contains(&co) {
+            println!("found duplicated entry on line {}: {:?} {}", lno, co, value);
+        } else {
+            co_data.insert(co.clone());
+            tensor_data.push((co, value));
+        }
+
         line.clear();
+        lno += 1;
     }
 
     tensor_data.sort_by(|a, b| {
@@ -52,7 +83,7 @@ fn load_tensor<P: AsRef<Path>>(path: P) -> Vec<(Vec<i64>, f64)> {
         Ordering::Equal
     });
 
-    tensor_data
+    Ok(tensor_data)
 }
 
 // Compressed Sparse Fiber data structure.
