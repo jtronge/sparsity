@@ -5,7 +5,6 @@ use std::fs::File;
 use std::str::FromStr;
 use std::cmp::Ordering;
 use std::path::Path;
-use std::collections::HashSet;
 
 #[derive(Debug)]
 pub enum TensorError {
@@ -16,13 +15,12 @@ pub enum TensorError {
 }
 
 /// Load and validate a tensor from a file.
-pub fn load_tensor<P: AsRef<Path>>(path: P) -> Result<Vec<(Vec<usize>, f64)>, TensorError> {
+pub fn load_tensor<P: AsRef<Path>>(path: P) -> Result<(usize, Vec<(Vec<usize>, f64)>), TensorError> {
     let file = File::open(path).map_err(|err| TensorError::IOError(err))?;
     let mut reader = BufReader::new(file);
-    let mut co_data = HashSet::new();
     let mut tensor_data: Vec<(Vec<usize>, f64)> = vec![];
     let mut line = String::new();
-    let mut dim_count = None;
+    let mut nmodes = None;
     let mut lno = 1;
     while reader.read_line(&mut line).map_err(|err| TensorError::IOError(err))? != 0 {
         let trimmed_line = line.trim();
@@ -34,10 +32,10 @@ pub fn load_tensor<P: AsRef<Path>>(path: P) -> Result<Vec<(Vec<usize>, f64)>, Te
             .split_whitespace()
             .map(|s| s.to_string())
             .collect();
-        if dim_count.is_none() {
-            let _ = dim_count.insert(parts.len()-1);
+        if nmodes.is_none() {
+            let _ = nmodes.insert(parts.len()-1);
         } else {
-            let count = dim_count.expect("missing dimension count");
+            let count = nmodes.expect("missing dimension count");
             if count != parts.len()-1 {
                 return Err(TensorError::BadTensorEntry);
             }
@@ -56,12 +54,7 @@ pub fn load_tensor<P: AsRef<Path>>(path: P) -> Result<Vec<(Vec<usize>, f64)>, Te
             Err(_) => return Err(TensorError::InvalidValue),
         };
 
-        if co_data.contains(&co) {
-            println!("found duplicated entry on line {}: {:?} {}", lno, co, value);
-        } else {
-            co_data.insert(co.clone());
-            tensor_data.push((co, value));
-        }
+        tensor_data.push((co, value));
 
         line.clear();
         lno += 1;
@@ -83,7 +76,7 @@ pub fn load_tensor<P: AsRef<Path>>(path: P) -> Result<Vec<(Vec<usize>, f64)>, Te
         Ordering::Equal
     });
 
-    Ok(tensor_data)
+    Ok((nmodes.expect("missing nmodes (the tensor is probably empty"), tensor_data))
 }
 
 // Compressed Sparse Fiber data structure.
