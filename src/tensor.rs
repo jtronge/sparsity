@@ -79,9 +79,9 @@ pub fn load_tensor<P: AsRef<Path>>(path: P) -> Result<(usize, Vec<(Vec<usize>, f
     Ok((nmodes.expect("missing nmodes (the tensor is probably empty"), tensor_data))
 }
 
-// Compressed Sparse Fiber data structure.
-//
-// Based on http://shaden.io/pub-files/smith2017knl.pdf
+/// Compressed Sparse Fiber data structure.
+///
+/// Based on http://shaden.io/pub-files/smith2017knl.pdf
 struct CSF {
     fptr: Vec<Vec<i64>>,
     fids: Vec<Vec<i64>>,
@@ -146,12 +146,7 @@ mod test {
 
     #[test]
     fn basic_tensor() {
-        // let tensor = load_tensor("lbnl-network.tns");
-        // let tensor = load_tensor("test.tns");
-        // println!("{:?}", tensor);
-        //let csf = CSF::new(tensor);
         // Test example from http://shaden.io/pub-files/smith2017knl.pdf
-
         let tensor = vec![
             (vec![1, 1, 1, 2], 1.0),
             (vec![1, 1, 1, 3], 2.0),
