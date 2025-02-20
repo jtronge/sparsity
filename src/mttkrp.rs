@@ -1,1 +1,1 @@
-/// Implementation of Matricized-Tensor Times Khatri Rao Product (MTTKRP).
+//! Implementation of Matricized-Tensor Times Khatri Rao Product (MTTKRP).
